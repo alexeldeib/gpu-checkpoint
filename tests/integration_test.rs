@@ -83,12 +83,12 @@ fn test_checkpoint_restore_integration() {
     let mut detection = DetectionResult::new(std::process::id(), GpuVendor::Nvidia);
     detection.add_allocation(GpuAllocation::new(
         0x700000000000,
-        0x700000100000,  // 1MB allocation
+        0x700000100000, // 1MB allocation
         AllocationType::Standard,
     ));
     detection.add_allocation(GpuAllocation::new(
         0x700100000000,
-        0x700100100000,  // 1MB allocation
+        0x700100100000, // 1MB allocation
         AllocationType::Uvm,
     ));
 
