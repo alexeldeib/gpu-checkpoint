@@ -11,10 +11,10 @@ use tracing::{debug, info, warn};
 const BAR_WINDOW_SIZE: usize = 256 * 1024 * 1024;
 
 /// Checkpoint header magic number
-const CHECKPOINT_MAGIC: u32 = 0x47505543; // "GPUC"
+pub const CHECKPOINT_MAGIC: u32 = 0x47505543; // "GPUC"
 
 /// Version of the checkpoint format
-const CHECKPOINT_VERSION: u32 = 1;
+pub const CHECKPOINT_VERSION: u32 = 1;
 
 #[derive(Debug)]
 pub struct BarSlidingCheckpoint {
@@ -27,21 +27,21 @@ pub struct BarSlidingCheckpoint {
 
 #[derive(Debug, Clone)]
 pub struct CheckpointHeader {
-    magic: u32,
-    version: u32,
-    pid: u32,
-    num_allocations: u32,
-    total_size: u64,
-    timestamp: u64,
+    pub magic: u32,
+    pub version: u32,
+    pub pid: u32,
+    pub num_allocations: u32,
+    pub total_size: u64,
+    pub timestamp: u64,
 }
 
 #[derive(Debug, Clone)]
 pub struct AllocationHeader {
-    vaddr_start: u64,
-    vaddr_end: u64,
-    size: u64,
-    device_id: u32,
-    flags: u32,
+    pub vaddr_start: u64,
+    pub vaddr_end: u64,
+    pub size: u64,
+    pub device_id: u32,
+    pub flags: u32,
 }
 
 impl BarSlidingCheckpoint {

@@ -1,4 +1,4 @@
-mod bar_sliding;
+pub mod bar_sliding;
 
 pub use bar_sliding::{BarSlidingCheckpoint, CheckpointMetadata as BarCheckpointMetadata};
 

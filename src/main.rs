@@ -201,7 +201,33 @@ async fn main() -> anyhow::Result<()> {
 
         Commands::Restore { metadata, storage } => {
             info!("Restoring from {} using storage {}", metadata, storage);
-            println!("This feature is not yet implemented");
+            
+            // Parse the metadata path to get the checkpoint file
+            let checkpoint_path = std::path::Path::new(&metadata);
+            
+            // Create restore engine
+            let restore = gpu_checkpoint::restore::BarRestore::new();
+            
+            // Perform restore
+            match restore.restore_from_checkpoint(checkpoint_path, None) {
+                Ok(restore_metadata) => {
+                    println!("Restore completed successfully!");
+                    println!("Process ID: {}", restore_metadata.pid);
+                    println!("Allocations restored: {}", restore_metadata.num_allocations);
+                    println!(
+                        "Total size: {}",
+                        utils::format_memory(restore_metadata.total_size)
+                    );
+                    println!(
+                        "Duration: {}",
+                        utils::format_duration(restore_metadata.duration_ms)
+                    );
+                }
+                Err(e) => {
+                    error!("Restore failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
         }
     }
 

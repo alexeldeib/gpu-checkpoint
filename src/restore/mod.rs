@@ -1,5 +1,9 @@
+pub mod bar_restore;
+
 use crate::checkpoint::CheckpointMetadata;
 use crate::Result;
+
+pub use bar_restore::{BarRestore, RestoreMetadata};
 
 pub struct RestoreEngine {
     _storage_path: String,
