@@ -1,11 +1,11 @@
-use crate::{Result, GpuCheckpointError};
 use crate::detector::{DetectionResult, GpuAllocation};
+use crate::{GpuCheckpointError, Result};
+use indicatif::{ProgressBar, ProgressStyle};
 use std::fs::{File, OpenOptions};
-use std::io::{Read, Write, Seek, SeekFrom};
+use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::Path;
 use std::time::Instant;
 use tracing::{debug, info, warn};
-use indicatif::{ProgressBar, ProgressStyle};
 
 /// BAR sliding window size (typically 256MB for most GPUs)
 const BAR_WINDOW_SIZE: usize = 256 * 1024 * 1024;
@@ -20,7 +20,7 @@ const CHECKPOINT_VERSION: u32 = 1;
 pub struct BarSlidingCheckpoint {
     /// Size of the BAR window for sliding
     window_size: usize,
-    
+
     /// Progress reporting
     show_progress: bool,
 }
@@ -51,12 +51,12 @@ impl BarSlidingCheckpoint {
             show_progress: true,
         }
     }
-    
+
     pub fn with_window_size(mut self, size: usize) -> Self {
         self.window_size = size;
         self
     }
-    
+
     pub fn checkpoint_process(
         &self,
         pid: u32,
@@ -65,7 +65,7 @@ impl BarSlidingCheckpoint {
     ) -> Result<CheckpointMetadata> {
         info!("Starting BAR sliding checkpoint for PID {}", pid);
         let start_time = Instant::now();
-        
+
         // Create checkpoint file
         let mut file = OpenOptions::new()
             .create(true)
@@ -73,7 +73,7 @@ impl BarSlidingCheckpoint {
             .truncate(true)
             .open(output_path)
             .map_err(|e| GpuCheckpointError::IoError(e))?;
-        
+
         // Write header
         let header = CheckpointHeader {
             magic: CHECKPOINT_MAGIC,
@@ -86,42 +86,44 @@ impl BarSlidingCheckpoint {
                 .unwrap()
                 .as_secs(),
         };
-        
+
         self.write_header(&mut file, &header)?;
-        
+
         // Set up progress bar
         let progress = if self.show_progress {
             let pb = ProgressBar::new(detection.total_gpu_memory);
             pb.set_style(
                 ProgressStyle::default_bar()
-                    .template("[{elapsed_precise}] {bar:40.cyan/blue} {bytes}/{total_bytes} ({eta})")
+                    .template(
+                        "[{elapsed_precise}] {bar:40.cyan/blue} {bytes}/{total_bytes} ({eta})",
+                    )
                     .unwrap()
-                    .progress_chars("=>-")
+                    .progress_chars("=>-"),
             );
             Some(pb)
         } else {
             None
         };
-        
+
         // Checkpoint each allocation
         let mut total_written = 0u64;
         for (idx, allocation) in detection.allocations.iter().enumerate() {
-            debug!("Checkpointing allocation {} of {}", idx + 1, detection.allocations.len());
-            
-            let bytes_written = self.checkpoint_allocation(
-                pid,
-                allocation,
-                &mut file,
-                &progress,
-            )?;
-            
+            debug!(
+                "Checkpointing allocation {} of {}",
+                idx + 1,
+                detection.allocations.len()
+            );
+
+            let bytes_written =
+                self.checkpoint_allocation(pid, allocation, &mut file, &progress)?;
+
             total_written += bytes_written;
         }
-        
+
         if let Some(pb) = progress {
             pb.finish_with_message("Checkpoint complete");
         }
-        
+
         let duration = start_time.elapsed();
         info!(
             "Checkpoint completed: {} bytes in {:.2}s ({:.2} MB/s)",
@@ -129,7 +131,7 @@ impl BarSlidingCheckpoint {
             duration.as_secs_f64(),
             (total_written as f64 / (1024.0 * 1024.0)) / duration.as_secs_f64()
         );
-        
+
         Ok(CheckpointMetadata {
             pid,
             path: output_path.to_path_buf(),
@@ -138,7 +140,7 @@ impl BarSlidingCheckpoint {
             num_allocations: detection.allocations.len(),
         })
     }
-    
+
     fn checkpoint_allocation(
         &self,
         pid: u32,
@@ -154,18 +156,18 @@ impl BarSlidingCheckpoint {
             device_id: allocation.device_id.unwrap_or(0),
             flags: 0, // Reserved for future use
         };
-        
+
         self.write_allocation_header(output, &alloc_header)?;
-        
+
         // For real implementation, we would:
         // 1. Pause the process using CRIU or ptrace
         // 2. Map the GPU memory via BAR
         // 3. Copy in sliding windows
         // 4. Resume the process
-        
+
         // For now, simulate by reading from /proc/pid/mem
         let mem_path = format!("/proc/{}/mem", pid);
-        
+
         if Path::new(&mem_path).exists() {
             self.copy_memory_sliding(
                 &mem_path,
@@ -179,10 +181,10 @@ impl BarSlidingCheckpoint {
             warn!("Cannot access {}, writing zeros", mem_path);
             self.write_zeros(allocation.size, output, progress)?;
         }
-        
+
         Ok(allocation.size)
     }
-    
+
     fn copy_memory_sliding(
         &self,
         mem_path: &str,
@@ -191,42 +193,39 @@ impl BarSlidingCheckpoint {
         output: &mut File,
         progress: &Option<ProgressBar>,
     ) -> Result<()> {
-        let mut mem_file = OpenOptions::new()
-            .read(true)
-            .open(mem_path)
-            .map_err(|e| {
-                if e.kind() == std::io::ErrorKind::PermissionDenied {
-                    GpuCheckpointError::PermissionDenied
-                } else {
-                    GpuCheckpointError::IoError(e)
-                }
-            })?;
-        
+        let mut mem_file = OpenOptions::new().read(true).open(mem_path).map_err(|e| {
+            if e.kind() == std::io::ErrorKind::PermissionDenied {
+                GpuCheckpointError::PermissionDenied
+            } else {
+                GpuCheckpointError::IoError(e)
+            }
+        })?;
+
         mem_file.seek(SeekFrom::Start(start_addr))?;
-        
+
         let mut remaining = size;
         let mut buffer = vec![0u8; self.window_size.min(size as usize)];
-        
+
         while remaining > 0 {
             let to_read = remaining.min(self.window_size as u64) as usize;
             let bytes_read = mem_file.read(&mut buffer[..to_read])?;
-            
+
             if bytes_read == 0 {
                 break;
             }
-            
+
             output.write_all(&buffer[..bytes_read])?;
-            
+
             remaining -= bytes_read as u64;
-            
+
             if let Some(pb) = progress {
                 pb.inc(bytes_read as u64);
             }
         }
-        
+
         Ok(())
     }
-    
+
     fn write_zeros(
         &self,
         size: u64,
@@ -235,21 +234,21 @@ impl BarSlidingCheckpoint {
     ) -> Result<()> {
         let zeros = vec![0u8; self.window_size];
         let mut remaining = size;
-        
+
         while remaining > 0 {
             let to_write = remaining.min(self.window_size as u64) as usize;
             output.write_all(&zeros[..to_write])?;
-            
+
             remaining -= to_write as u64;
-            
+
             if let Some(pb) = progress {
                 pb.inc(to_write as u64);
             }
         }
-        
+
         Ok(())
     }
-    
+
     fn write_header(&self, file: &mut File, header: &CheckpointHeader) -> Result<()> {
         // Write as binary for efficiency
         file.write_all(&header.magic.to_le_bytes())?;
@@ -260,7 +259,7 @@ impl BarSlidingCheckpoint {
         file.write_all(&header.timestamp.to_le_bytes())?;
         Ok(())
     }
-    
+
     fn write_allocation_header(&self, file: &mut File, header: &AllocationHeader) -> Result<()> {
         file.write_all(&header.vaddr_start.to_le_bytes())?;
         file.write_all(&header.vaddr_end.to_le_bytes())?;
@@ -284,7 +283,7 @@ pub struct CheckpointMetadata {
 mod tests {
     use super::*;
     use tempfile::tempdir;
-    
+
     #[test]
     fn test_checkpoint_header_serialization() {
         let header = CheckpointHeader {
@@ -295,28 +294,30 @@ mod tests {
             total_size: 1024 * 1024,
             timestamp: 1234567890,
         };
-        
+
         let dir = tempdir().unwrap();
         let path = dir.path().join("test.ckpt");
         let mut file = File::create(&path).unwrap();
-        
+
         let checkpoint = BarSlidingCheckpoint::new();
         checkpoint.write_header(&mut file, &header).unwrap();
-        
+
         // Verify file size
         let metadata = file.metadata().unwrap();
         assert_eq!(metadata.len(), 32); // 6 fields * 4-8 bytes each
     }
-    
+
     #[test]
     fn test_write_zeros() {
         let dir = tempdir().unwrap();
         let path = dir.path().join("zeros.bin");
         let mut file = File::create(&path).unwrap();
-        
+
         let checkpoint = BarSlidingCheckpoint::new();
-        checkpoint.write_zeros(1024 * 1024, &mut file, &None).unwrap();
-        
+        checkpoint
+            .write_zeros(1024 * 1024, &mut file, &None)
+            .unwrap();
+
         let metadata = file.metadata().unwrap();
         assert_eq!(metadata.len(), 1024 * 1024);
     }

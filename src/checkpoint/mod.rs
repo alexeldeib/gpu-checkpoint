@@ -5,8 +5,8 @@ pub use bar_sliding::{BarSlidingCheckpoint, CheckpointMetadata as BarCheckpointM
 use crate::detector::DetectionResult;
 use crate::Result;
 use serde::{Deserialize, Serialize};
-use std::time::{Duration, SystemTime};
 use std::path::PathBuf;
+use std::time::{Duration, SystemTime};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CheckpointStrategy {
@@ -56,23 +56,24 @@ impl CheckpointEngine {
         CheckpointStrategy::CudaCheckpoint
     }
 
-    pub async fn checkpoint(&self, pid: u32, detection: &DetectionResult) -> Result<CheckpointMetadata> {
+    pub async fn checkpoint(
+        &self,
+        pid: u32,
+        detection: &DetectionResult,
+    ) -> Result<CheckpointMetadata> {
         use std::time::Instant;
         let start = Instant::now();
-        
+
         match self._config.strategy {
             CheckpointStrategy::BarSliding => {
                 // Use BAR sliding for problematic allocations
                 let bar_checkpoint = BarSlidingCheckpoint::new();
                 let output_path = PathBuf::from(&self._config.storage_path)
                     .join(format!("checkpoint_{}.bin", pid));
-                
-                let bar_metadata = bar_checkpoint.checkpoint_process(
-                    pid,
-                    detection,
-                    &output_path,
-                )?;
-                
+
+                let bar_metadata =
+                    bar_checkpoint.checkpoint_process(pid, detection, &output_path)?;
+
                 Ok(CheckpointMetadata {
                     pid,
                     strategy_used: CheckpointStrategy::BarSliding,
