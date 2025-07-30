@@ -62,7 +62,7 @@ jobs:
     - name: Run GPU detection test (mock)
       run: |
         # Create a mock process to test detection
-        cargo run -- detect --pid $$ --format json
+        cargo run --bin gpu-checkpoint -- detect --pid $$ --format json
 
   integration-test:
     name: Integration Test
