@@ -25,25 +25,25 @@ impl fmt::Display for GpuVendor {
 pub enum AllocationType {
     /// Standard GPU memory allocation (cudaMalloc)
     Standard,
-    
+
     /// Unified Virtual Memory allocation
     Uvm,
-    
+
     /// Managed memory (cudaMallocManaged)
     Managed,
-    
+
     /// IPC shared memory
     Ipc,
-    
+
     /// Distributed training allocation (NCCL, etc)
     Distributed,
-    
+
     /// Memory-mapped BAR region
     BarMapped,
-    
+
     /// Host-pinned memory
     HostPinned,
-    
+
     /// Unknown allocation type
     Unknown,
 }
@@ -52,22 +52,22 @@ pub enum AllocationType {
 pub struct GpuAllocation {
     /// Virtual address range start
     pub vaddr_start: u64,
-    
+
     /// Virtual address range end
     pub vaddr_end: u64,
-    
+
     /// Size in bytes
     pub size: u64,
-    
+
     /// Allocation type
     pub alloc_type: AllocationType,
-    
+
     /// GPU device ID
     pub device_id: Option<u32>,
-    
+
     /// File descriptor (if memory-mapped)
     pub fd: Option<i32>,
-    
+
     /// Additional metadata
     pub metadata: AllocationMetadata,
 }
@@ -76,16 +76,16 @@ pub struct GpuAllocation {
 pub struct AllocationMetadata {
     /// Is this allocation part of a distributed setup?
     pub is_distributed: bool,
-    
+
     /// NUMA node if applicable
     pub numa_node: Option<u32>,
-    
+
     /// Backing file path if memory-mapped
     pub backing_file: Option<String>,
-    
+
     /// Memory protection flags
     pub protection: String,
-    
+
     /// Is this a shared mapping?
     pub is_shared: bool,
 }
@@ -94,19 +94,19 @@ pub struct AllocationMetadata {
 pub struct DetectionResult {
     /// Process ID
     pub pid: u32,
-    
+
     /// GPU vendor
     pub vendor: GpuVendor,
-    
+
     /// All detected allocations
     pub allocations: Vec<GpuAllocation>,
-    
+
     /// Total GPU memory used
     pub total_gpu_memory: u64,
-    
+
     /// Detection timestamp
     pub timestamp: SystemTime,
-    
+
     /// Summary statistics
     pub stats: DetectionStats,
 }
@@ -134,13 +134,14 @@ impl GpuAllocation {
             metadata: AllocationMetadata::default(),
         }
     }
-    
+
     pub fn is_problematic(&self) -> bool {
-        matches!(self.alloc_type, 
-            AllocationType::Uvm | 
-            AllocationType::Managed | 
-            AllocationType::Ipc |
-            AllocationType::Distributed
+        matches!(
+            self.alloc_type,
+            AllocationType::Uvm
+                | AllocationType::Managed
+                | AllocationType::Ipc
+                | AllocationType::Distributed
         )
     }
 }
@@ -171,15 +172,15 @@ impl DetectionResult {
             stats: DetectionStats::default(),
         }
     }
-    
+
     pub fn add_allocation(&mut self, allocation: GpuAllocation) {
         self.total_gpu_memory += allocation.size;
         self.stats.total_size += allocation.size;
-        
+
         if allocation.size > self.stats.largest_allocation {
             self.stats.largest_allocation = allocation.size;
         }
-        
+
         match allocation.alloc_type {
             AllocationType::Standard => self.stats.standard_allocations += 1,
             AllocationType::Uvm => self.stats.uvm_allocations += 1,
@@ -188,10 +189,10 @@ impl DetectionResult {
             AllocationType::Distributed => self.stats.distributed_allocations += 1,
             _ => {}
         }
-        
+
         self.allocations.push(allocation);
     }
-    
+
     pub fn has_problematic_allocations(&self) -> bool {
         self.allocations.iter().any(|a| a.is_problematic())
     }

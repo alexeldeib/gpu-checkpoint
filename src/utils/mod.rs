@@ -1,18 +1,18 @@
 pub fn format_memory(bytes: u64) -> String {
     const UNITS: &[&str] = &["B", "KiB", "MiB", "GiB", "TiB", "PiB"];
-    
+
     if bytes == 0 {
         return "0 B".to_string();
     }
-    
+
     let mut size = bytes as f64;
     let mut unit_index = 0;
-    
+
     while size >= 1024.0 && unit_index < UNITS.len() - 1 {
         size /= 1024.0;
         unit_index += 1;
     }
-    
+
     if unit_index == 0 {
         format!("{} {}", bytes, UNITS[unit_index])
     } else {
@@ -35,7 +35,7 @@ pub fn format_duration(ms: u64) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_format_memory() {
         assert_eq!(format_memory(0), "0 B");
@@ -47,7 +47,7 @@ mod tests {
         assert_eq!(format_memory(1024u64.pow(4)), "1.00 TiB");
         assert_eq!(format_memory(1024u64.pow(5)), "1.00 PiB");
     }
-    
+
     #[test]
     fn test_format_duration() {
         assert_eq!(format_duration(0), "0ms");

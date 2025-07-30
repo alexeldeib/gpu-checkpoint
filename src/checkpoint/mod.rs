@@ -1,5 +1,5 @@
-use crate::Result;
 use crate::detector::DetectionResult;
+use crate::Result;
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, SystemTime};
 
@@ -7,13 +7,13 @@ use std::time::{Duration, SystemTime};
 pub enum CheckpointStrategy {
     /// Use CUDA checkpoint API (fastest, but limited)
     CudaCheckpoint,
-    
+
     /// Use BAR sliding approach (universal, but slower)
     BarSliding,
-    
+
     /// Hybrid approach based on allocation types
     Hybrid,
-    
+
     /// Skip GPU state (data loss)
     SkipGpu,
 }
@@ -35,22 +35,22 @@ impl CheckpointEngine {
     pub fn new(config: CheckpointConfig) -> Self {
         Self { config }
     }
-    
+
     pub fn select_strategy(detection: &DetectionResult) -> CheckpointStrategy {
         // If no allocations, we can skip GPU
         if detection.allocations.is_empty() {
             return CheckpointStrategy::SkipGpu;
         }
-        
+
         // If we have problematic allocations, must use BAR sliding
         if detection.has_problematic_allocations() {
             return CheckpointStrategy::BarSliding;
         }
-        
+
         // Otherwise, CUDA checkpoint should work
         CheckpointStrategy::CudaCheckpoint
     }
-    
+
     pub async fn checkpoint(&self, _pid: u32) -> Result<CheckpointMetadata> {
         // This would implement the actual checkpointing
         todo!("Implement checkpointing")
