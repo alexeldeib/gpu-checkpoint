@@ -79,13 +79,18 @@ fn test_checkpoint_restore_integration() {
     let checkpoint_path = dir.path().join("test.ckpt");
 
     // Create a mock detection result
+    // Use addresses that are page-aligned and don't overlap with real memory
     let mut detection = DetectionResult::new(std::process::id(), GpuVendor::Nvidia);
     detection.add_allocation(GpuAllocation::new(
-        0x100000,
-        0x200000,
+        0x700000000000,
+        0x700000100000,  // 1MB allocation
         AllocationType::Standard,
     ));
-    detection.add_allocation(GpuAllocation::new(0x300000, 0x400000, AllocationType::Uvm));
+    detection.add_allocation(GpuAllocation::new(
+        0x700100000000,
+        0x700100100000,  // 1MB allocation
+        AllocationType::Uvm,
+    ));
 
     // Checkpoint the allocations
     let checkpoint = BarSlidingCheckpoint::new();
@@ -103,6 +108,8 @@ fn test_checkpoint_restore_integration() {
         .unwrap();
 
     assert_eq!(restore_metadata.num_allocations, 2);
+    // The total_size from restore_metadata represents bytes actually restored,
+    // which should match the checkpoint size
     assert_eq!(restore_metadata.total_size, ckpt_metadata.size_bytes);
 }
 
