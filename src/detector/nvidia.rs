@@ -9,6 +9,12 @@ use tracing::{debug, info};
 
 pub struct NvidiaDetector;
 
+impl Default for NvidiaDetector {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl NvidiaDetector {
     pub fn new() -> Self {
         Self
@@ -148,7 +154,7 @@ impl GpuDetector for NvidiaDetector {
         let fds = ProcessScanner::scan_file_descriptors(pid)?;
         let gpu_fds: Vec<_> = fds
             .iter()
-            .filter_map(|fd| ProcessScanner::classify_fd(fd))
+            .filter_map(ProcessScanner::classify_fd)
             .filter(|info| {
                 matches!(
                     info.device_type,
@@ -229,6 +235,7 @@ impl GpuDetector for NvidiaDetector {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 struct NvmlInfo {
     gpu_memory_used: u64,
     device_id: u32,

@@ -28,12 +28,12 @@ pub struct CheckpointConfig {
 }
 
 pub struct CheckpointEngine {
-    config: CheckpointConfig,
+    _config: CheckpointConfig,
 }
 
 impl CheckpointEngine {
     pub fn new(config: CheckpointConfig) -> Self {
-        Self { config }
+        Self { _config: config }
     }
 
     pub fn select_strategy(detection: &DetectionResult) -> CheckpointStrategy {

@@ -23,6 +23,12 @@ pub struct CompositeDetector {
     detectors: Vec<Box<dyn GpuDetector>>,
 }
 
+impl Default for CompositeDetector {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CompositeDetector {
     pub fn new() -> Self {
         let mut detectors: Vec<Box<dyn GpuDetector>> = Vec::new();

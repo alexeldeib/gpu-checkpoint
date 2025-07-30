@@ -13,6 +13,7 @@ use tracing::debug;
 use tracing::trace;
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct MemoryRegion {
     pub start: u64,
     pub end: u64,
@@ -25,6 +26,7 @@ pub struct MemoryRegion {
 
 pub struct MemoryMapParser;
 
+#[allow(dead_code)]
 impl MemoryMapParser {
     pub fn parse_maps(pid: u32) -> Result<Vec<MemoryRegion>> {
         #[cfg(target_os = "linux")]

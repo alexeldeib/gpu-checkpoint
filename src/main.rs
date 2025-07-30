@@ -127,14 +127,14 @@ async fn main() -> anyhow::Result<()> {
                                 );
                                 println!("      Size: {}", utils::format_memory(alloc.size));
                                 if let Some(ref file) = alloc.metadata.backing_file {
-                                    println!("      Backing: {}", file);
+                                    println!("      Backing: {file}");
                                 }
                             }
                         }
 
                         // Recommend strategy
-                        let strategy = CheckpointEngine::select_strategy(&result);
-                        println!("\nRecommended checkpoint strategy: {:?}", strategy);
+                        let strategy = CheckpointEngine::select_strategy(result);
+                        println!("\nRecommended checkpoint strategy: {strategy:?}");
                     }
                 }
                 _ => {
@@ -180,9 +180,9 @@ async fn main() -> anyhow::Result<()> {
                 compression: false,
             };
 
-            let engine = CheckpointEngine::new(config);
+            let _engine = CheckpointEngine::new(config);
 
-            println!("Using checkpoint strategy: {:?}", checkpoint_strategy);
+            println!("Using checkpoint strategy: {checkpoint_strategy:?}");
             println!("This feature is not yet implemented");
 
             // let metadata = engine.checkpoint(pid).await?;
