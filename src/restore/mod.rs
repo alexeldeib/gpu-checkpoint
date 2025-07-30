@@ -7,7 +7,9 @@ pub struct RestoreEngine {
 
 impl RestoreEngine {
     pub fn new(storage_path: String) -> Self {
-        Self { _storage_path: storage_path }
+        Self {
+            _storage_path: storage_path,
+        }
     }
 
     pub async fn restore(&self, _metadata: &CheckpointMetadata) -> Result<u32> {
