@@ -63,7 +63,7 @@ impl MemoryMapParser {
         }
     }
     
-    fn parse_line(line: &str) -> Option<MemoryRegion> {
+    pub fn parse_line(line: &str) -> Option<MemoryRegion> {
         let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() < 5 {
             return None;
@@ -177,6 +177,24 @@ mod tests {
     }
     
     #[test]
+    fn test_parse_anonymous_mapping() {
+        let line = "7f0000000000-7f0001000000 rw-p 00000000 00:00 0";
+        let region = MemoryMapParser::parse_line(line).unwrap();
+        
+        assert_eq!(region.start, 0x7f0000000000);
+        assert_eq!(region.end, 0x7f0001000000);
+        assert_eq!(region.pathname, None);
+    }
+    
+    #[test]
+    fn test_parse_with_spaces_in_path() {
+        let line = "7f0000000000-7f0001000000 r-xp 00000000 08:01 123456 /path/with spaces/file";
+        let region = MemoryMapParser::parse_line(line).unwrap();
+        
+        assert_eq!(region.pathname, Some("/path/with spaces/file".to_string()));
+    }
+    
+    #[test]
     fn test_classify_nvidia_uvm() {
         let region = MemoryRegion {
             start: 0x7f0000000000,
@@ -191,5 +209,40 @@ mod tests {
         let allocation = MemoryMapParser::classify_region(&region).unwrap();
         assert_eq!(allocation.alloc_type, AllocationType::Uvm);
         assert_eq!(allocation.size, 0x1000000); // 16MB
+        assert!(allocation.metadata.is_shared);
+    }
+    
+    #[test]
+    fn test_classify_standard_nvidia() {
+        let region = MemoryRegion {
+            start: 0x200000000,
+            end: 0x300000000,
+            perms: "rw-p".to_string(),
+            offset: 0,
+            dev: "00:00".to_string(),
+            inode: 0,
+            pathname: Some("/dev/nvidia0".to_string()),
+        };
+        
+        let allocation = MemoryMapParser::classify_region(&region).unwrap();
+        assert_eq!(allocation.alloc_type, AllocationType::Standard);
+        assert_eq!(allocation.size, 0x100000000); // 4GB
+        assert!(!allocation.metadata.is_shared);
+    }
+    
+    #[test]
+    fn test_classify_bar_mapping() {
+        let region = MemoryRegion {
+            start: 0x7f0000000000,
+            end: 0x7f0010000000,
+            perms: "rw-p".to_string(),
+            offset: 0,
+            dev: "00:00".to_string(),
+            inode: 0,
+            pathname: Some("/sys/bus/pci/devices/0000:01:00.0/resource0".to_string()),
+        };
+        
+        let allocation = MemoryMapParser::classify_region(&region).unwrap();
+        assert_eq!(allocation.alloc_type, AllocationType::BarMapped);
     }
 }
