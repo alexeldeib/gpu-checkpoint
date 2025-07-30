@@ -85,12 +85,8 @@ impl BarRestore {
             );
 
             let alloc_header = self.read_allocation_header(&mut file)?;
-            let bytes_restored = self.restore_allocation(
-                pid,
-                &alloc_header,
-                &mut file,
-                &progress,
-            )?;
+            let bytes_restored =
+                self.restore_allocation(pid, &alloc_header, &mut file, &progress)?;
 
             total_restored += bytes_restored;
         }
@@ -168,16 +164,13 @@ impl BarRestore {
         input: &mut File,
         progress: &Option<ProgressBar>,
     ) -> Result<()> {
-        let mut mem_file = OpenOptions::new()
-            .write(true)
-            .open(mem_path)
-            .map_err(|e| {
-                if e.kind() == std::io::ErrorKind::PermissionDenied {
-                    GpuCheckpointError::PermissionDenied
-                } else {
-                    GpuCheckpointError::IoError(e)
-                }
-            })?;
+        let mut mem_file = OpenOptions::new().write(true).open(mem_path).map_err(|e| {
+            if e.kind() == std::io::ErrorKind::PermissionDenied {
+                GpuCheckpointError::PermissionDenied
+            } else {
+                GpuCheckpointError::IoError(e)
+            }
+        })?;
 
         mem_file.seek(SeekFrom::Start(start_addr))?;
 

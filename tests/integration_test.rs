@@ -22,7 +22,6 @@ fn test_composite_detector_no_gpu() {
 
 #[test]
 fn test_strategy_selection() {
-
     // Test with no allocations
     let empty_result = DetectionResult::new(1234, GpuVendor::Nvidia);
     assert_eq!(
@@ -81,7 +80,11 @@ fn test_checkpoint_restore_integration() {
 
     // Create a mock detection result
     let mut detection = DetectionResult::new(std::process::id(), GpuVendor::Nvidia);
-    detection.add_allocation(GpuAllocation::new(0x100000, 0x200000, AllocationType::Standard));
+    detection.add_allocation(GpuAllocation::new(
+        0x100000,
+        0x200000,
+        AllocationType::Standard,
+    ));
     detection.add_allocation(GpuAllocation::new(0x300000, 0x400000, AllocationType::Uvm));
 
     // Checkpoint the allocations
@@ -123,10 +126,10 @@ fn test_cli_detect_command() {
     assert!(output.status.success());
 }
 
-#[test] 
+#[test]
 fn test_cli_checkpoint_command() {
     let dir = tempdir().unwrap();
-    
+
     // Build the binary first
     let output = Command::new("cargo")
         .args(&["build", "--bin", "gpu-checkpoint"])

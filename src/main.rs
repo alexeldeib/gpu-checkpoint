@@ -201,13 +201,13 @@ async fn main() -> anyhow::Result<()> {
 
         Commands::Restore { metadata, storage } => {
             info!("Restoring from {} using storage {}", metadata, storage);
-            
+
             // Parse the metadata path to get the checkpoint file
             let checkpoint_path = std::path::Path::new(&metadata);
-            
+
             // Create restore engine
             let restore = gpu_checkpoint::restore::BarRestore::new();
-            
+
             // Perform restore
             match restore.restore_from_checkpoint(checkpoint_path, None) {
                 Ok(restore_metadata) => {
