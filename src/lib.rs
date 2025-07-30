@@ -3,7 +3,7 @@ pub mod detector;
 pub mod restore;
 pub mod utils;
 
-pub use checkpoint::{CheckpointEngine, CheckpointStrategy};
+pub use checkpoint::{CheckpointEngine, CheckpointStrategy, CheckpointMetadata};
 pub use detector::{AllocationType, GpuAllocation, GpuDetector};
 pub use restore::RestoreEngine;
 

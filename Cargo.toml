@@ -27,12 +27,12 @@ memmap2 = "0.9"
 libc = "0.2"
 regex = "1.10"
 
+# Performance and metrics
+indicatif = "0.17"
+
 # Linux-specific dependencies
 [target.'cfg(target_os = "linux")'.dependencies]
 procfs = "0.16"
-
-# Performance and metrics
-indicatif = "0.17"
 
 # Testing utilities
 [dev-dependencies]
@@ -44,6 +44,10 @@ mockall = "0.12"
 [[bin]]
 name = "gpu-checkpoint"
 path = "src/main.rs"
+
+[[bin]]
+name = "mock-gpu-process"
+path = "src/bin/mock_gpu_process.rs"
 
 [lib]
 name = "gpu_checkpoint"

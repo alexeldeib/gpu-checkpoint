@@ -172,6 +172,9 @@ async fn main() -> anyhow::Result<()> {
                 }
             };
 
+            // Create output directory if it doesn't exist
+            std::fs::create_dir_all(&storage)?;
+            
             let config = CheckpointConfig {
                 strategy: checkpoint_strategy,
                 storage_path: storage,
@@ -180,13 +183,14 @@ async fn main() -> anyhow::Result<()> {
                 compression: false,
             };
 
-            let _engine = CheckpointEngine::new(config);
+            let engine = CheckpointEngine::new(config);
 
             println!("Using checkpoint strategy: {checkpoint_strategy:?}");
-            println!("This feature is not yet implemented");
-
-            // let metadata = engine.checkpoint(pid).await?;
-            // println!("Checkpoint completed in {}", utils::format_duration(metadata.duration_ms));
+            
+            let metadata = engine.checkpoint(pid, &results[0]).await?;
+            println!("Checkpoint completed in {}", utils::format_duration(metadata.duration_ms));
+            println!("Checkpoint size: {}", utils::format_memory(metadata.size_bytes));
+            println!("Strategy used: {:?}", metadata.strategy_used);
         }
 
         Commands::Restore { metadata, storage } => {
