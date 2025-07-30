@@ -68,8 +68,8 @@ impl CheckpointEngine {
             CheckpointStrategy::BarSliding => {
                 // Use BAR sliding for problematic allocations
                 let bar_checkpoint = BarSlidingCheckpoint::new();
-                let output_path = PathBuf::from(&self._config.storage_path)
-                    .join(format!("checkpoint_{pid}.bin"));
+                let output_path =
+                    PathBuf::from(&self._config.storage_path).join(format!("checkpoint_{pid}.bin"));
 
                 let bar_metadata =
                     bar_checkpoint.checkpoint_process(pid, detection, &output_path)?;
