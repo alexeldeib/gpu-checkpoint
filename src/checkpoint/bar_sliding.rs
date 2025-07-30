@@ -175,13 +175,20 @@ impl BarSlidingCheckpoint {
         let mem_path = format!("/proc/{pid}/mem");
 
         if Path::new(&mem_path).exists() {
-            self.copy_memory_sliding(
+            match self.copy_memory_sliding(
                 &mem_path,
                 allocation.vaddr_start,
                 allocation.size,
                 output,
                 progress,
-            )?;
+            ) {
+                Ok(()) => {}
+                Err(e) => {
+                    // Handle permission errors gracefully
+                    warn!("Cannot read {}: {}, writing zeros", mem_path, e);
+                    self.write_zeros(allocation.size, output, progress)?;
+                }
+            }
         } else {
             // Fallback: write zeros for testing
             warn!("Cannot access {}, writing zeros", mem_path);
