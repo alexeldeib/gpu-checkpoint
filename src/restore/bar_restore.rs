@@ -27,12 +27,18 @@ pub struct RestoreMetadata {
     pub duration_ms: u64,
 }
 
-impl BarRestore {
-    pub fn new() -> Self {
+impl Default for BarRestore {
+    fn default() -> Self {
         Self {
             window_size: 256 * 1024 * 1024, // 256MB
             show_progress: true,
         }
+    }
+}
+
+impl BarRestore {
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn restore_from_checkpoint(
@@ -47,7 +53,7 @@ impl BarRestore {
         let mut file = OpenOptions::new()
             .read(true)
             .open(checkpoint_path)
-            .map_err(|e| GpuCheckpointError::IoError(e))?;
+            .map_err(GpuCheckpointError::IoError)?;
 
         // Read and validate header
         let header = self.read_header(&mut file)?;
@@ -130,7 +136,7 @@ impl BarRestore {
         // 4. Resume the process
 
         // For now, simulate by reading the data
-        let mem_path = format!("/proc/{}/mem", pid);
+        let mem_path = format!("/proc/{pid}/mem");
 
         if Path::new(&mem_path).exists() {
             match self.restore_memory_sliding(

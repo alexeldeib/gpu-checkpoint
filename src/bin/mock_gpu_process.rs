@@ -21,11 +21,11 @@ fn main() {
         {
             Ok(mut file) => {
                 writeln!(file, "Mock GPU device").ok();
-                println!("Created mock device: {}", path);
+                println!("Created mock device: {path}");
                 fds.push(file);
             }
             Err(e) => {
-                eprintln!("Failed to create {}: {}", path, e);
+                eprintln!("Failed to create {path}: {e}");
             }
         }
     }

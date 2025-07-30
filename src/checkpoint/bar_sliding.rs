@@ -44,12 +44,18 @@ pub struct AllocationHeader {
     pub flags: u32,
 }
 
-impl BarSlidingCheckpoint {
-    pub fn new() -> Self {
+impl Default for BarSlidingCheckpoint {
+    fn default() -> Self {
         Self {
             window_size: BAR_WINDOW_SIZE,
             show_progress: true,
         }
+    }
+}
+
+impl BarSlidingCheckpoint {
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn with_window_size(mut self, size: usize) -> Self {
@@ -72,7 +78,7 @@ impl BarSlidingCheckpoint {
             .write(true)
             .truncate(true)
             .open(output_path)
-            .map_err(|e| GpuCheckpointError::IoError(e))?;
+            .map_err(GpuCheckpointError::IoError)?;
 
         // Write header
         let header = CheckpointHeader {
@@ -166,7 +172,7 @@ impl BarSlidingCheckpoint {
         // 4. Resume the process
 
         // For now, simulate by reading from /proc/pid/mem
-        let mem_path = format!("/proc/{}/mem", pid);
+        let mem_path = format!("/proc/{pid}/mem");
 
         if Path::new(&mem_path).exists() {
             self.copy_memory_sliding(

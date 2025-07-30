@@ -31,7 +31,7 @@ impl MemoryMapParser {
     pub fn parse_maps(pid: u32) -> Result<Vec<MemoryRegion>> {
         #[cfg(target_os = "linux")]
         {
-            let maps_path = format!("/proc/{}/maps", pid);
+            let maps_path = format!("/proc/{pid}/maps");
             let file = File::open(&maps_path).map_err(|e| {
                 if e.kind() == std::io::ErrorKind::NotFound {
                     GpuCheckpointError::ProcessNotFound(pid)

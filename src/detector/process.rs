@@ -19,7 +19,7 @@ impl ProcessScanner {
     pub fn scan_file_descriptors(pid: u32) -> Result<Vec<FileDescriptor>> {
         #[cfg(target_os = "linux")]
         {
-            let fd_dir = format!("/proc/{}/fd", pid);
+            let fd_dir = format!("/proc/{pid}/fd");
             let mut descriptors = Vec::new();
 
             let entries = fs::read_dir(&fd_dir).map_err(|e| {
@@ -126,7 +126,7 @@ impl ProcessScanner {
     pub fn check_process_cmdline(pid: u32) -> Result<String> {
         #[cfg(target_os = "linux")]
         {
-            let cmdline_path = format!("/proc/{}/cmdline", pid);
+            let cmdline_path = format!("/proc/{pid}/cmdline");
             let cmdline = fs::read_to_string(&cmdline_path)?;
 
             // Replace null bytes with spaces for readability
@@ -143,7 +143,7 @@ impl ProcessScanner {
     pub fn check_process_environ(pid: u32) -> Result<Vec<(String, String)>> {
         #[cfg(target_os = "linux")]
         {
-            let environ_path = format!("/proc/{}/environ", pid);
+            let environ_path = format!("/proc/{pid}/environ");
             let environ = fs::read_to_string(&environ_path)?;
 
             let mut env_vars = Vec::new();
